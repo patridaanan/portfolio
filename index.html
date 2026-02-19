@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Patricia | Constellation Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #020617;
+      --accent: #f9a8d4;
+      --accent2: #a5b4fc;
+      --accent3: #fde68a;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+      background: #000;
+      overflow: hidden;
+    }
+
+    /* Full-screen starry sky */
+    #starfield {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      display: block;
+    }
+
+    .overlay {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 12px 32px;
+      pointer-events: none; /* children opt in */
+    }
+
+    header.hero {
+      text-align: center;
+      margin-bottom: 16px;
+      pointer-events: auto;
+    }
+
+    header.hero h1 {
+      font-size: 2.2rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    header.hero .subtitle {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .tagline {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .tagline span {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* Constellation area */
+    .constellation-area {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      flex: 1;
+      margin-top: 8px;
+      pointer-events: none;
+    }
+
+    /* Thin glowing constellation lines */
+    .connection-lines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.98;
+    }
+
+    .connection-lines line {
+      stroke: url(#constellationGradient);
+      stroke-width: 0.26;              /* SUPER thin */
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 4px rgba(230, 235, 255, 0.8));
+      animation: shimmer 3.2s ease-in-out infinite;
+    }
+
+    /* Doodle star nodes */
+    .node {
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      gap: 4px;
+      pointer-events: auto;
+      transform-origin: center;
+      transition: transform 0.2s ease;
+    }
+
+    .node-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .star-doodle {
+      width: 56px;
+      height: 56px;
+      filter: drop-shadow(0 0 6px rgba(248, 250, 252, 0.9));
+      transition: transform 0.2s ease, filter 0.2s ease;
+      animation: doodle-twinkle 2.6s ease-in-out infinite;
+    }
+
+    .star-doodle path {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .star-doodle circle {
+      fill: currentColor;
+      opacity: 0.28;
+    }
+
+    .node:hover {
+      transform: scale(1.06);
+    }
+
+    .node:hover .star-doodle {
+      transform: scale(1.18) rotate(-2deg);
+      filter: drop-shadow(0 0 14px rgba(248, 250, 252, 1));
+      animation-duration: 1.5s;
+    }
+
+    /* Colour per node + slight rotation */
+    .node.center {
+      color: var(--accent2);
+      transform: translate(-50%, -50%) rotate(-6deg);
+    }
+    .node.about {
+      color: var(--accent);
+      transform: translate(-50%, -50%) rotate(3deg);
+    }
+    .node.projects {
+      color: var(--accent3);
+      transform: translate(-50%, -50%) rotate(-4deg);
+    }
+    .node.experience {
+      color: #6ee7b7;
+      transform: translate(-50%, -50%) rotate(5deg);
+    }
+    .node.contact {
+      color: #fca5a5;
+      transform: translate(-50%, -50%) rotate(-8deg);
+    }
+
+    /* Positions in percentage of the constellation-area */
+    .node.center { left: 50%; top: 50%; }
+    .node.about { left: 20%; top: 28%; }
+    .node.projects { left: 80%; top: 30%; }
+    .node.experience { left: 22%; top: 74%; }
+    .node.contact { left: 78%; top: 74%; }
+
+    footer {
+      margin-top: 12px;
+      font-size: 0.78rem;
+      color: #64748b;
+      text-align: center;
+      pointer-events: auto;
+    }
+
+    /* Twinkling for doodle stars */
+    @keyframes doodle-twinkle {
+      0%   { opacity: 0.7; transform: scale(1) rotate(0deg); }
+      50%  { opacity: 1;   transform: scale(1.08) rotate(1.5deg); }
+      100% { opacity: 0.7; transform: scale(1) rotate(0deg); }
+    }
+
+    /* Shimmer for lines */
+    @keyframes shimmer {
+      0% {
+        stroke-opacity: 0.4;
+        filter: drop-shadow(0 0 3px rgba(230, 235, 255, 0.4));
+      }
+      50% {
+        stroke-opacity: 1;
+        filter: drop-shadow(0 0 7px rgba(230, 235, 255, 0.9));
+      }
+      100% {
+        stroke-opacity: 0.4;
+        filter: drop-shadow(0 0 3px rgba(230, 235, 255, 0.4));
+      }
+    }
+
+    /* ===== Side panel base (About + Experience + Contact) ===== */
+    /* Default = Experience behaviour (fixed, never cuts off footer buttons) */
+    .side-panel {
+      position: fixed;                 /* ✅ Experience stays fully visible */
+      left: 2%;
+      top: 92px;                       /* ✅ below hero */
+      bottom: 24px;                    /* ✅ leaves room so footer buttons aren't cut */
+      width: min(460px, 90vw);
+
+      display: flex;
+      flex-direction: column;
+
+      background: #020617;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.85);
+      padding: 16px 16px 12px;
+      z-index: 3;
+
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+      pointer-events: none;
+    }
+
+    /* About stays compact like before */
+    .side-panel.compact {
+      position: absolute;
+      top: 12%;
+      bottom: auto;
+      max-height: 76vh;
+    }
+
+    /* Put Experience on the right so it doesn't fight About */
+    .side-panel.right {
+      left: auto;
+      right: 2%;
+    }
+
+    .side-panel.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .side-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .side-panel-header h2 {
+      font-size: 1.02rem;
+    }
+
+    .side-panel-header span.badge {
+      font-size: 0.78rem;
+      padding: 3px 9px;
+      border-radius: 99px;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      color: #9ca3af;
+      white-space: nowrap;
+    }
+
+    .side-panel-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 6px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .side-panel-body::-webkit-scrollbar { width: 6px; }
+    .side-panel-body::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.5);
+      border-radius: 10px;
+    }
+    .side-panel-body::-webkit-scrollbar-track { background: transparent; }
+
+    .side-panel-body p {
+      font-size: 0.88rem;
+      color: #d1d5db;
+      line-height: 1.55;
+      margin-bottom: 8px;
+    }
+
+    .side-panel-section-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+      margin-top: 10px;
+      margin-bottom: 6px;
+    }
+
+    .side-panel-body ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0 0 10px;
+    }
+
+    .side-panel-body li {
+      font-size: 0.84rem;
+      color: #cbd5f5;
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+
+    .side-panel-footer {
+      flex-shrink: 0;
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    /* Smaller compact panel for Contact */
+#contact-panel {
+  top: 18%;
+  left: 60%;               /* position it nicely near contact star */
+  width: min(320px, 88vw);
+  max-height: 300px;
+}
+
+
+    .panel-close-btn {
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      color: #e5e7eb;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .panel-close-btn:hover {
+      background: rgba(30, 64, 175, 0.8);
+      border-color: rgba(191, 219, 254, 0.9);
+    }
+
+    /* Contact quick links */
+    .contact-links a {
+      color: #e5e7eb;
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(148, 163, 184, 0.55);
+    }
+    .contact-links a:hover {
+      border-bottom-color: rgba(191, 219, 254, 0.9);
+    }
+    .contact-note {
+      font-size: 0.82rem;
+      color: #cbd5f5;
+      opacity: 0.92;
+    }
+
+    /* ===== Animated branch line (About + Experience) ===== */
+    .branch {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease-out;
+      z-index: 2;
+    }
+
+    .branch.show { opacity: 1; }
+
+    .branch line {
+      stroke: rgba(235, 240, 255, 0.95);
+      stroke-width: 0.22;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 4px rgba(235, 240, 255, 0.85));
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: drawLine 420ms ease-out forwards, linePulse 2.8s ease-in-out 450ms infinite;
+    }
+
+    @keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+    @keyframes linePulse {
+      0%, 100% { opacity: 0.45; filter: drop-shadow(0 0 3px rgba(235, 240, 255, 0.35)); }
+      50%      { opacity: 1;    filter: drop-shadow(0 0 7px rgba(235, 240, 255, 0.9)); }
+    }
+
+    /* ===== Rounded experience boxes (inside the panel) ===== */
+    .exp-card {
+      background: rgba(2, 6, 23, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 18px 56px rgba(0, 0, 0, 0.55);
+      margin-bottom: 12px;
+    }
+
+    .exp-top {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .exp-role {
+      font-weight: 750;
+      color: #f8fafc;
+      font-size: 0.92rem;
+      line-height: 1.25;
+    }
+
+    .exp-meta {
+      color: #cbd5f5;
+      font-size: 0.78rem;
+      opacity: 0.95;
+      line-height: 1.35;
+    }
+
+    .exp-bullets {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .exp-bullets li {
+      font-size: 0.84rem;
+      color: #d1d5db;
+      line-height: 1.45;
+    }
+
+    .exp-bullets li::before {
+      content: "✦";
+      margin-right: 8px;
+      color: rgba(226, 232, 240, 0.8);
+    }
+
+    /* ===== Detail modal card (projects modal still uses this) ===== */
+    .project-detail-card {
+      width: min(680px, 92vw);
+      margin: 0 auto;
+      background: rgba(2, 6, 23, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 22px 70px rgba(0, 0, 0, 0.85);
+    }
+
+    .project-detail-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #cbd5f5;
+      margin-bottom: 10px;
+      background: rgba(15, 23, 42, 0.6);
+    }
+
+    .project-detail-desc {
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: #e5e7eb;
+      margin-bottom: 14px;
+    }
+
+    .project-detail-desc .desc-title {
+      display: block;
+      font-weight: 650;
+      font-size: 0.88rem;
+      color: #f8fafc;
+      margin-bottom: 6px;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .project-detail-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pranda-card { cursor: default; }
+
+    /* ===== Flip inside a modal (Project detail -> Poster) ===== */
+    .flip-stage {
+      width: 100%;
+      height: 100%;
+      perspective: 1400px;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .flip-card {
+      width: min(760px, 94vw);
+      height: min(70vh, 620px);
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 520ms cubic-bezier(.2,.8,.2,1);
+    }
+
+    .flip-card.is-flipped { transform: rotateY(180deg); }
+
+    .flip-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .flip-front { transform: rotateY(0deg); }
+
+    .flip-back {
+      transform: rotateY(180deg);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 22px 70px rgba(0, 0, 0, 0.85);
+
+      background: url("starry.jpg") center/cover no-repeat;
+      position: relative;
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    .flip-back::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.55);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .flip-back > * { position: relative; z-index: 1; }
+
+    .poster-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .poster-header h4 {
+      font-size: 0.92rem;
+      color: #e5e7eb;
+      letter-spacing: 0.02em;
+    }
+
+    .modal.project-detail .flip-back .poster-frame {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      overflow: auto;
+      background: transparent;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .modal.project-detail .flip-back .poster-frame img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      cursor: pointer;
+    }
+
+    /* ===== Modal overlay (shared) ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(4px);
+      z-index: 30;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      pointer-events: auto;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      width: min(980px, 96vw);
+      height: min(86vh, 820px);
+      background: #020617;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      border-radius: 0;
+      box-shadow: 0 26px 80px rgba(0, 0, 0, 0.9);
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    .modal-header h3 {
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+    }
+
+    .modal-body {
+      flex: 1;
+      background: #000;
+      display: grid;
+      place-items: center;
+    }
+
+    .modal.project-detail {
+      position: relative;
+      background: url("starry.jpg") center/cover no-repeat;
+    }
+
+    .modal.project-detail::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.62);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .modal.project-detail > * {
+      position: relative;
+      z-index: 1;
+      overflow: auto;
+    }
+
+    .modal.project-detail .modal-body { background: transparent !important; }
+
+    #poster-viewer-modal .modal {
+      background: url("starry.jpg") center/cover no-repeat;
+      position: relative;
+      border-radius: 22px;
+    }
+
+    #poster-viewer-modal .modal::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.62);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #poster-viewer-modal .modal > * { position: relative; z-index: 1; }
+
+    #poster-viewer-modal .modal-body {
+      background: transparent !important;
+      overflow: auto !important;
+      display: block;
+    }
+
+    #posterViewerImg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+      cursor: zoom-in;
+    }
+
+    #posterViewerImg.zoomed {
+      width: auto;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      object-fit: initial;
+      cursor: zoom-out;
+    }
+
+    @media (max-width: 720px) {
+      header.hero h1 { font-size: 1.8rem; }
+      .node { width: 78px; height: 78px; }
+      .star-doodle { width: 46px; height: 46px; }
+
+      .node.center { left: 50%; top: 50%; }
+      .node.about { left: 22%; top: 30%; }
+      .node.projects { left: 78%; top: 32%; }
+      .node.experience { left: 24%; top: 74%; }
+      .node.contact { left: 76%; top: 76%; }
+
+      /* Experience (default) stays fixed/tall */
+      .side-panel { left: 5%; top: 86px; bottom: 18px; width: min(360px, 92vw); }
+
+      /* About stays compact on mobile too */
+      .side-panel.compact { top: 14%; bottom: auto; max-height: 360px; }
+
+      .side-panel.right { right: 5%; left: auto; }
+      #contact-panel {
+  left: 5%;
+  right: 5%;
+  width: auto;
+  top: 20%;
+  max-height: 280px;
+}
+
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="starfield"></canvas>
+
+  <div class="overlay">
+    <header class="hero">
+      <p class="subtitle" style="letter-spacing:0.18em; text-transform:uppercase;">Welcome to</p>
+      <h1>Patricia</h1>
+      <p class="subtitle">A pastel constellation of my work ✨</p>
+      <p class="tagline">
+        Aspiring <span>data / cyber security engineer</span> & software engineer based in Melbourne.
+      </p>
+    </header>
+
+    <main class="constellation-area">
+      <svg class="connection-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="constellationGradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#e6ebff" stop-opacity="0" />
+            <stop offset="50%" stop-color="#f5f8ff" stop-opacity="0.95" />
+            <stop offset="100%" stop-color="#e6ebff" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+
+        <line x1="50" y1="50" x2="20" y2="28" />
+        <line x1="50" y1="50" x2="80" y2="30" />
+        <line x1="50" y1="50" x2="22" y2="74" />
+        <line x1="50" y1="50" x2="78" y2="74" />
+
+        <line x1="20" y1="28" x2="80" y2="30" />
+        <line x1="80" y1="30" x2="78" y2="74" />
+        <line x1="78" y1="74" x2="22" y2="74" />
+        <line x1="22" y1="74" x2="20" y2="28" />
+      </svg>
+
+      <!-- About branch -->
+      <svg class="branch" id="about-branch" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <line id="about-branch-line" x1="20" y1="28" x2="10" y2="12" />
+      </svg>
+
+      <!-- Experience branch -->
+      <svg class="branch" id="experience-branch" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <line id="experience-branch-line" x1="22" y1="74" x2="90" y2="84" />
+      </svg>
+
+      <!-- Contact branch (optional but cute) -->
+      <svg class="branch" id="contact-branch" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <line id="contact-branch-line" x1="78" y1="74" x2="92" y2="52" />
+      </svg>
+      <!-- Clubs branch -->
+<svg class="branch" id="clubs-branch" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+  <line id="clubs-branch-line" x1="50" y1="50" x2="50" y2="12" />
+</svg>
+
+
+      <!-- Center node -->
+<div class="node center" id="clubs-node" data-target="clubs-panel" data-type="panel">
+  <svg class="star-doodle" viewBox="0 0 64 64" aria-hidden="true">
+    <circle cx="32" cy="32" r="16" />
+    <path d="M32 10 L36.5 22 L49 23.5 L38.5 30.5 L41 43 L32 36.5 L23 43 L25.5 30.5 L15 23.5 L27.5 22 Z" />
+  </svg>
+  <span class="node-label">Clubs/Events</span>
+</div>
+
+
+      <div class="node about" id="about-node" data-target="about-panel" data-type="panel">
+        <svg class="star-doodle" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="15" />
+          <path d="M32 11 L36 21.5 L47 23 L38 29.5 L40.5 40.5 L32 35 L24 40.5 L26 29.5 L17 23 L28 21.5 Z" />
+        </svg>
+        <span class="node-label">About</span>
+      </div>
+
+      <!-- Projects star -->
+      <div class="node projects" id="projects-node" data-open-modal="project-1-modal">
+        <svg class="star-doodle" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="15" />
+          <path d="M32 12 L37 22.5 L48 25 L39 30.5 L41 41 L32 35 L23 41 L25 30.5 L16 25 L27 22.5 Z" />
+        </svg>
+        <span class="node-label">Projects</span>
+      </div>
+
+      <!-- Experience star opens SIDE PANEL -->
+      <div class="node experience" id="experience-node" data-target="experience-panel" data-type="panel">
+        <svg class="star-doodle" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="15" />
+          <path d="M32 12 L36 22 L46 25 L38 31 L40 41 L32 35 L24 41 L26 31 L18 25 L28 22 Z" />
+        </svg>
+        <span class="node-label">Experience</span>
+      </div>
+
+      <!-- Contact star now opens CONTACT PANEL -->
+      <div class="node contact" id="contact-node" data-target="contact-panel" data-type="panel">
+        <svg class="star-doodle" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="15" />
+          <path d="M32 12 L37 22 L47 26 L38 31 L40 41 L32 35 L24 41 L26 31 L17 26 L27 22 Z" />
+        </svg>
+        <span class="node-label">Contact</span>
+      </div>
+
+      <!-- ABOUT PANEL -->
+      <aside class="side-panel compact" id="about-panel">
+        <div class="side-panel-header">
+          <h2>Patricia</h2>
+          <span class="badge">Recent graduate</span>
+        </div>
+
+        <div class="side-panel-body">
+          <p>
+            I’m Patricia, a recent computing graduate from the University of Melbourne, currently based in Melbourne. I enjoy working where
+            <strong>software engineering</strong>, <strong>data</strong>, and <strong>cyber security</strong> overlap, especially when it
+            means building tools that make complex things feel simple.
+          </p>
+          <p>
+            Recently I’ve been a <strong>research assistant</strong> on climate and rainfall projects but this little constellation is
+            just for fun.
+          </p>
+
+          <div class="side-panel-section-title">Hobbies</div>
+          <ul>
+            <li>⛷️ Skiing, snowboarding, figure skating</li>
+            <li>🏸 Badminton, gym, pilates</li>
+            <li>📚 Reading, joining hackathons and CTFs</li>
+            <li>🍵 Matcha cafés and dessert spots around Melbourne.</li>
+            <li>🌧️ Watching storms & rainfall maps, then turning them into plots.</li>
+            <li>✨ Small side projects and UI experiments like this star map.</li>
+          </ul>
+        </div>
+
+        <div class="side-panel-footer">
+          <button class="panel-close-btn" data-close-panel="about-panel">Close</button>
+        </div>
+      </aside>
+
+      <!-- EXPERIENCE PANEL -->
+      <aside class="side-panel right" id="experience-panel">
+        <div class="side-panel-header">
+          <h2>Relevant Experience</h2>
+          <span class="badge">Resume highlights</span>
+        </div>
+
+        <div class="side-panel-body">
+          <!-- Research Assistant -->
+          <div class="exp-card">
+            <div class="exp-top">
+              <div class="exp-role">Research Assistant</div>
+              <div class="exp-meta">
+                ARC Centre of Excellence for the Weather of the 21st Century · University of Melbourne<br/>
+                March 2025 – Present
+              </div>
+            </div>
+
+            <ul class="exp-bullets">
+              <li>Built Python workflows and visualisations in Jupyter Notebooks to analyse AWS rainfall observations alongside high-resolution AUS2200 model simulations across multiple states.</li>
+              <li>Processed 100GB+ of NetCDF climate data using xarray, pandas and dask, uncovering rainfall patterns and event-scale anomalies during the June 2016 East Coast Low.</li>
+              <li>Produced clear, well-documented comparison plots supporting model evaluation and scientific communication.</li>
+              <li>Improved spatial–temporal data efficiency, enabling faster analysis turnaround.</li>
+              <li>Maintained version-controlled code (Git) to ensure reproducibility.</li>
+              <li>Presented a scientific poster at the ARC 21st Century Weather Annual Workshop.</li>
+            </ul>
+          </div>
+
+          <!-- WEHI -->
+          <div class="exp-card">
+            <div class="exp-top">
+              <div class="exp-role">Research Software Engineer Intern</div>
+              <div class="exp-meta">
+                WEHI · Melbourne, VIC<br/>
+                Nov 2024 – Mar 2025
+              </div>
+            </div>
+
+            <ul class="exp-bullets">
+              <li>Created a scenario simulator analysing shared vs. individual storage strategies.</li>
+              <li>Built Python data growth models comparing AWS S3, Glacier and Deep Archive tiers.</li>
+              <li>Developed a Streamlit dashboard forecasting storage trends and cost insights.</li>
+              <li>Improved metadata tagging and dataset discoverability.</li>
+              <li>Designed archive recommendation tool reducing long-term storage costs.</li>
+              <li>Strengthened reproducibility through structured documentation and Git workflows.</li>
+            </ul>
+          </div>
+
+          <!-- Krungthai -->
+          <div class="exp-card" style="margin-bottom: 0;">
+            <div class="exp-top">
+              <div class="exp-role">Software Engineer Intern</div>
+              <div class="exp-meta">
+                Krungthai Panich Insurance PCL · Bangkok, Thailand<br/>
+                Dec 2024 – Feb 2025
+              </div>
+            </div>
+
+            <ul class="exp-bullets">
+              <li>Developed RESTful APIs using Flask and tested endpoints with Postman.</li>
+              <li>Applied SQLAlchemy ORM and managed schemas via DBeaver.</li>
+              <li>Built frontend components in React.js with HTML/CSS/JavaScript.</li>
+              <li>Containerised backend services using Docker and assisted deployment.</li>
+              <li>Worked in agile teams using Monday.com and implemented API key-based security.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="side-panel-footer" style="justify-content: space-between;">
+          <a class="panel-close-btn" href="index.html">← Back to homepage</a>
+          <button class="panel-close-btn" data-close-panel="experience-panel">Close</button>
+        </div>
+      </aside>
+
+      <!-- CONTACT PANEL (NEW) -->
+      <aside class="side-panel compact" id="contact-panel">
+        <div class="side-panel-header">
+          <h2>Contact</h2>
+          <span class="badge">Prefer email ✉️</span>
+        </div>
+
+        <div class="side-panel-body contact-links">
+          <p class="contact-note">*Preferably contact via email.</p>
+
+          <div class="side-panel-section-title">Email</div>
+          <ul>
+            <li>
+              <a href="mailto:patridaanan@gmail.com">patridaanan@gmail.com</a>
+            </li>
+          </ul>
+
+          <div class="side-panel-section-title">Phone</div>
+          <ul>
+            <li>
+              <a href="tel:0407524014">0407 524 014</a>
+            </li>
+          </ul>
+
+          <div class="side-panel-section-title">Instagram</div>
+          <ul>
+            <li>
+              <a href="https://instagram.com/pat.jjjjppp" target="_blank" rel="noopener">@pat.jjjjppp</a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="side-panel-footer">
+          <button class="panel-close-btn" data-close-panel="contact-panel">Close</button>
+        </div>
+      </aside>
+
+    </main>
+
+    <footer>
+      © <span id="year"></span> Patricia · Star map to my portfolio ✨
+    </footer>
+  </div>
+
+  <!-- CLUBS PANEL -->
+<aside class="side-panel compact" id="clubs-panel">
+  <div class="side-panel-header">
+    <h2>Clubs & Events</h2>
+    <span class="badge">MISC</span>
+  </div>
+
+  <div class="side-panel-body">
+
+    <div class="exp-card">
+      <div class="exp-top">
+        <div class="exp-role">Melbourne Information Security Club (MISC)</div>
+        <div class="exp-meta">
+          Treasurer → IT Officer · University of Melbourne
+        </div>
+      </div>
+
+      <ul class="exp-bullets">
+        <li>Served as Treasurer and later IT Officer, supporting club operations and technical initiatives.</li>
+        <li>Represented MISC at <strong>BSides Canberra 2025</strong>, one of Australia's largest cybersecurity conferences.</li>
+        <li>Participated in the “Skateboarding Dog” CTF — placed 19th out of nearly 400 teams.</li>
+        <li>Applied skills developed through MISC workshops and CTF training to real-world challenges.</li>
+        <li>Engaged with 3,500+ cybersecurity professionals, gaining insight into industry problem-solving approaches.</li>
+      </ul>
+
+      <div style="margin-top:12px;">
+        <img src="photo.jpeg" alt="MISC BSides Canberra 2025"
+             style="width:100%; border-radius:14px; margin-top:10px;">
+      </div>
+    </div>
+
+  </div>
+
+  <div class="side-panel-footer">
+    <button class="panel-close-btn" data-close-panel="clubs-panel">Close</button>
+  </div>
+</aside>
+
+
+  <!-- PROJECT 1 DETAIL MODAL (HIDEOUT LIST: Rainfall + PRANDA + EchoHer) -->
+  <div class="modal-overlay" id="project-1-modal" aria-hidden="true">
+    <div class="modal project-detail" role="dialog" aria-modal="true" aria-label="Project details">
+      <div class="modal-header">
+        <h3>🛰️ My little hideout projects corner :3</h3>
+        <button class="panel-close-btn" data-close-modal="project-1-modal">Close</button>
+      </div>
+
+      <div class="modal-body project-detail-body">
+        <div class="flip-stage">
+          <div class="flip-card" id="project-1-flip">
+
+            <!-- FRONT: list of full project cards -->
+            <div class="flip-face flip-front">
+
+              <!-- Rainfall card -->
+              <div class="project-detail-card">
+                <div class="project-detail-badge">Research / Data analysis, at unimelb as research assistant (2025)</div>
+
+                <p class="project-detail-desc">
+                  <span class="desc-title">
+                    Investigated heavy rainfall along Australia’s East Coast during the June 2016 East Coast Low
+                  </span>
+                  Evaluated high-resolution AUS2200 simulations against AWS station rainfall and compared spatial
+                  patterns with AGCD and IMERG. Highlighted timing difference, intensity biases, terrain influence,
+                  and SST sensitivity. Presented scientific poster along with other researchers at the annual
+                  conference of 21st century weather institution.
+                </p>
+
+                <div class="project-detail-actions">
+                  <button class="panel-close-btn" data-flip="project-1-flip" data-flip-to="back">
+                    View Poster Result!
+                  </button>
+                </div>
+              </div>
+
+              <!-- PRANDA card -->
+              <div class="project-detail-card pranda-card" style="padding:14px;">
+                <div class="project-detail-badge">
+                  Team / iOS App Dev (2025) · Collaborated with Natalie Lam, Amy Sun, Rishi Mukherjee, Dylan Tran
+                </div>
+
+                <p class="project-detail-desc" style="margin-bottom:12px;">
+                  <span class="desc-title">🐼 PRANDA — Networking Companion</span>
+                  Built a networking companion app to help mentors &amp; mentees coordinate, stay accountable,
+                  and track progress. Focused on clean UX and real-world flows (profiles, meetups, reminders),
+                  working on front end design and backend integration with the team.
+                </p>
+
+                <div class="project-detail-actions">
+                  <a class="panel-close-btn"
+                     href="https://github.com/patridaanan/PRANDA"
+                     target="_blank" rel="noopener">
+                    GitHub
+                  </a>
+                </div>
+              </div>
+
+              <!-- EchoHer card -->
+              <div class="project-detail-card" style="padding:14px;">
+                <div class="project-detail-badge">
+                  Hackathon / Full-stack (2025) · EchoHer
+                </div>
+
+                <p class="project-detail-desc" style="margin-bottom:12px;">
+                  <span class="desc-title">💬 EchoHer — Supportive AI companion (Hackathon)</span>
+                  A cloud-based meeting analysis tool that uses speaker diarisation and NLP to detect interruptions and
+                  promote inclusive communication. Inspired by research on gender inequality in workplace dynamics, the tool provides personalised
+                  feedback on speaking patterns to help teams improve collaboration. Recognised with the People’s
+                  Choice Award and Best Overall Coding Track at Women in AI hackathon sponsored by Versent.
+                </p>
+
+                <div class="project-detail-actions">
+                  <a class="panel-close-btn"
+                     href="https://github.com/patridaanan/EchoHer?tab=readme-ov-file#%EF%B8%8F-video-demo-of-backend"
+                     target="_blank" rel="noopener">
+                    GitHub
+                  </a>
+
+                  <a class="panel-close-btn"
+                     href="Echo-HER.pdf"
+                     target="_blank" rel="noopener">
+                    Pitch slide (demo included)
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- BACK: Poster viewer for rainfall -->
+            <div class="flip-face flip-back">
+              <div class="poster-header">
+                <h4>🛰️ Scientific Poster</h4>
+                <div style="display:flex; gap:10px;">
+                  <a class="panel-close-btn" href="science_poster.png" download>Download</a>
+                  <button class="panel-close-btn" data-flip="project-1-flip" data-flip-to="front">Back</button>
+                </div>
+              </div>
+
+              <div class="poster-frame">
+                <img src="science_poster.png" alt="Scientific poster" data-open-poster-viewer />
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULL POSTER VIEWER MODAL -->
+  <div class="modal-overlay" id="poster-viewer-modal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Poster viewer" style="border-radius:22px;">
+      <div class="modal-header">
+        <h3>🛰️ Scientific Poster (Full view)</h3>
+        <div style="display:flex; gap:10px;">
+          <a class="panel-close-btn" id="posterDownloadBtn" href="science_poster.png" download>Download</a>
+          <button class="panel-close-btn" data-close-modal="poster-viewer-modal">Close</button>
+        </div>
+      </div>
+      <div class="modal-body" style="overflow:auto; display:block;">
+        <img id="posterViewerImg" src="science_poster.png" alt="Scientific poster full view" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Auto year
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const viewerImg = document.getElementById("posterViewerImg");
+
+    function resetSpecialStatesIfNeeded(modalId) {
+      if (modalId === "project-1-modal") {
+        document.getElementById("project-1-flip")?.classList.remove("is-flipped");
+      }
+      if (modalId === "poster-viewer-modal") {
+        viewerImg?.classList.remove("zoomed");
+      }
+    }
+
+    function closeAllModals() {
+      document.querySelectorAll(".modal-overlay.open").forEach((m) => {
+        resetSpecialStatesIfNeeded(m.id);
+        m.classList.remove("open");
+      });
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      resetSpecialStatesIfNeeded(id);
+      modal.classList.remove("open");
+    }
+
+    function openModal(id) {
+      if (!id) return;
+      closeAllModals();
+      const modal = document.getElementById(id);
+      modal?.classList.add("open");
+    }
+
+    // Flip inside modal
+    document.querySelectorAll("[data-flip]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const flipId = btn.getAttribute("data-flip");
+        const to = btn.getAttribute("data-flip-to");
+        const flipEl = document.getElementById(flipId);
+        if (!flipEl) return;
+        if (to === "back") flipEl.classList.add("is-flipped");
+        else flipEl.classList.remove("is-flipped");
+      });
+    });
+
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+    function restartLineAnimation(line) {
+      if (!line) return;
+      line.style.animation = "none";
+      void line.getBoundingClientRect();
+      line.style.animation = "drawLine 420ms ease-out forwards, linePulse 2.8s ease-in-out 450ms infinite";
+    }
+
+    function setBranchLine(nodeEl, panelEl, lineEl) {
+      const area = document.querySelector(".constellation-area");
+      if (!area || !nodeEl || !panelEl || !lineEl) return;
+
+      const areaRect = area.getBoundingClientRect();
+      const nodeRect = nodeEl.getBoundingClientRect();
+      const panelRect = panelEl.getBoundingClientRect();
+
+      const startX = ((nodeRect.left + nodeRect.width / 2) - areaRect.left) / areaRect.width * 100;
+      const startY = ((nodeRect.top + nodeRect.height / 2) - areaRect.top) / areaRect.height * 100;
+
+      const endXpx = (panelRect.left + 14);
+      const endYpx = panelRect.top + 18;
+
+      const endX = (endXpx - areaRect.left) / areaRect.width * 100;
+      const endY = (endYpx - areaRect.top) / areaRect.height * 100;
+
+      lineEl.setAttribute("x1", clamp(startX, 0, 100));
+      lineEl.setAttribute("y1", clamp(startY, 0, 100));
+      lineEl.setAttribute("x2", clamp(endX, 0, 100));
+      lineEl.setAttribute("y2", clamp(endY, 0, 100));
+
+      restartLineAnimation(lineEl);
+    }
+
+    function closeAllPanels() {
+      document.querySelectorAll(".side-panel.open").forEach((p) => p.classList.remove("open"));
+      document.querySelectorAll(".branch.show").forEach((b) => b.classList.remove("show"));
+    }
+
+    function openPanel(id) {
+      closeAllPanels();
+      const panel = document.getElementById(id);
+      if (!panel) return;
+      panel.classList.add("open");
+
+      requestAnimationFrame(() => {
+        if (id === "about-panel") {
+          const branch = document.getElementById("about-branch");
+          const line = document.getElementById("about-branch-line");
+          const node = document.getElementById("about-node");
+          branch?.classList.add("show");
+          setBranchLine(node, panel, line);
+        }
+
+        if (id === "experience-panel") {
+          const branch = document.getElementById("experience-branch");
+          const line = document.getElementById("experience-branch-line");
+          const node = document.getElementById("experience-node");
+          branch?.classList.add("show");
+          setBranchLine(node, panel, line);
+        }
+
+        if (id === "contact-panel") {
+          const branch = document.getElementById("contact-branch");
+          const line = document.getElementById("contact-branch-line");
+          const node = document.getElementById("contact-node");
+          branch?.classList.add("show");
+          setBranchLine(node, panel, line);
+        }
+        if (id === "clubs-panel") {
+  const branch = document.getElementById("clubs-branch");
+  const line = document.getElementById("clubs-branch-line");
+  const node = document.getElementById("clubs-node");
+  branch?.classList.add("show");
+  setBranchLine(node, panel, line);
+}
+
+
+      });
+    }
+
+    // Nodes
+    document.querySelectorAll(".node").forEach((node) => {
+      node.addEventListener("click", () => {
+        const modalId = node.getAttribute("data-open-modal");
+        if (modalId) {
+          openModal(modalId);
+          return;
+        }
+
+        const target = node.getAttribute("data-target");
+        const type = node.getAttribute("data-type");
+        if (!target || !type) return;
+
+        if (type === "page") window.location.href = target;
+        if (type === "panel") openPanel(target);
+      });
+    });
+
+    // Close panel buttons
+    document.querySelectorAll("[data-close-panel]").forEach((btn) => {
+      btn.addEventListener("click", closeAllPanels);
+    });
+
+    // Poster viewer helpers
+    function openPosterViewer(src) {
+      const modal = document.getElementById("poster-viewer-modal");
+      const img = document.getElementById("posterViewerImg");
+      const dl = document.getElementById("posterDownloadBtn");
+      if (!modal || !img || !dl) return;
+
+      img.src = src;
+      dl.href = src;
+
+      img.classList.remove("zoomed");
+      openModal("poster-viewer-modal");
+
+      requestAnimationFrame(() => {
+        const body = modal.querySelector(".modal-body");
+        if (body) { body.scrollTop = 0; body.scrollLeft = 0; }
+      });
+    }
+
+    document.querySelectorAll("[data-open-poster-viewer]").forEach((img) => {
+      img.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const src = img.getAttribute("src");
+        if (src) openPosterViewer(src);
+      });
+    });
+
+    const viewerModal = document.getElementById("poster-viewer-modal");
+
+    if (viewerImg && viewerModal) {
+      viewerImg.addEventListener("click", (e) => {
+        e.stopPropagation();
+        viewerImg.classList.toggle("zoomed");
+      });
+
+      let dragging = false;
+      let startX = 0, startY = 0;
+      let startScrollLeft = 0, startScrollTop = 0;
+
+      viewerImg.addEventListener("mousedown", (e) => {
+        if (!viewerImg.classList.contains("zoomed")) return;
+        const body = viewerModal.querySelector(".modal-body");
+        if (!body) return;
+
+        dragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startScrollLeft = body.scrollLeft;
+        startScrollTop = body.scrollTop;
+
+        body.style.cursor = "grabbing";
+        e.preventDefault();
+      });
+
+      window.addEventListener("mouseup", () => {
+        dragging = false;
+        const body = viewerModal.querySelector(".modal-body");
+        if (body) body.style.cursor = "";
+      });
+
+      window.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        const body = viewerModal.querySelector(".modal-body");
+        if (!body) return;
+
+        const dx = startX - e.clientX;
+        const dy = startY - e.clientY;
+        body.scrollLeft = startScrollLeft + dx;
+        body.scrollTop = startScrollTop + dy;
+      });
+
+      viewerImg.addEventListener("dblclick", () => {
+        const src = viewerImg.getAttribute("src");
+        if (!src) return;
+        const a = document.createElement("a");
+        a.href = src;
+        a.download = "";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      });
+    }
+
+    // Close modals (buttons)
+    document.querySelectorAll("[data-close-modal]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-close-modal");
+        closeModal(id);
+      });
+    });
+
+    // Click outside modal closes it
+    document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeModal(overlay.id);
+      });
+    });
+
+    // ESC closes panels + modals
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeAllPanels();
+        closeAllModals();
+      }
+    });
+
+    // Starfield background
+    const canvas = document.getElementById("starfield");
+    const ctx = canvas.getContext("2d");
+    let stars = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      createStars();
+    }
+
+    function createStars() {
+      stars = [];
+      const count = Math.floor((canvas.width * canvas.height) / 8500);
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 1.3 + 0.3,
+          a: Math.random() * Math.PI * 2,
+          speed: 0.004 + Math.random() * 0.003
+        });
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        s.a += s.speed;
+        const alpha = 0.25 + 0.7 * (0.5 + 0.5 * Math.sin(s.a));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(226, 232, 240," + alpha + ")";
+        ctx.fill();
+      }
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    animate();
+  </script>
+</body>
+</html>
