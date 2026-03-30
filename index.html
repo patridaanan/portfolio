@@ -1038,7 +1038,7 @@
       <div class="modal-body project-detail-body">
         <div class="flip-stage">
 
-          <!-- MAIN FLIP CARD: Rainfall poster -->
+          <!-- MAIN SHARED FLIP CARD -->
           <div class="flip-card" id="project-1-flip">
 
             <!-- FRONT: list of full project cards -->
@@ -1061,9 +1061,12 @@
                 </p>
 
                 <div class="project-detail-actions">
-                  <button class="panel-close-btn"
-                          data-flip="tableau-flip"
-                          data-flip-to="back">
+                  <button
+                    class="panel-close-btn"
+                    data-open-shared-viewer
+                    data-view-title="📊 Tableau Dashboard Preview"
+                    data-view-src="market analysis tableau.png"
+                    data-view-download="market analysis tableau.png">
                     View Tableau Dashboard
                   </button>
                 </div>
@@ -1084,7 +1087,12 @@
                 </p>
 
                 <div class="project-detail-actions">
-                  <button class="panel-close-btn" data-flip="project-1-flip" data-flip-to="back">
+                  <button
+                    class="panel-close-btn"
+                    data-open-shared-viewer
+                    data-view-title="🛰️ Scientific Poster"
+                    data-view-src="science_poster.png"
+                    data-view-download="science_poster.png">
                     View Poster Result!
                   </button>
                 </div>
@@ -1164,41 +1172,22 @@
 
             </div>
 
-            <!-- BACK: Poster viewer for rainfall -->
+            <!-- BACK: Shared viewer for rainfall + tableau -->
             <div class="flip-face flip-back">
               <div class="poster-header">
-                <h4>🛰️ Scientific Poster</h4>
+                <h4 id="sharedViewerTitle">🛰️ Scientific Poster</h4>
                 <div style="display:flex; gap:10px;">
-                  <a class="panel-close-btn" href="science_poster.png" download>Download</a>
+                  <a class="panel-close-btn" id="sharedViewerDownload" href="science_poster.png" download>Download</a>
                   <button class="panel-close-btn" data-flip="project-1-flip" data-flip-to="front">Back</button>
                 </div>
               </div>
 
               <div class="poster-frame">
-                <img src="science_poster.png" alt="Scientific poster" data-open-poster-viewer />
-              </div>
-            </div>
-
-          </div>
-
-          <!-- SEPARATE TABLEAU FLIP CARD -->
-          <div class="flip-card" id="tableau-flip">
-
-            <div class="flip-face flip-front"></div>
-
-            <div class="flip-face flip-back">
-              <div class="poster-header">
-                <h4>📊 Tableau Dashboard Preview</h4>
-                <div style="display:flex; gap:10px;">
-                  <a class="panel-close-btn" href="market-analysis-tableau.png" download>Download</a>
-                  <button class="panel-close-btn" data-flip="tableau-flip" data-flip-to="front">Back</button>
-                </div>
-              </div>
-
-              <div class="poster-frame">
-                <img src="market-analysis-tableau.png"
-                     alt="Tableau dashboard"
-                     style="max-width:100%; max-height:100%;">
+                <img
+                  id="sharedViewerImg"
+                  src="science_poster.png"
+                  alt="Project preview"
+                  data-open-poster-viewer />
               </div>
             </div>
 
@@ -1230,10 +1219,22 @@
     document.getElementById("year").textContent = new Date().getFullYear();
 
     const viewerImg = document.getElementById("posterViewerImg");
+    const sharedViewerTitle = document.getElementById("sharedViewerTitle");
+    const sharedViewerImg = document.getElementById("sharedViewerImg");
+    const sharedViewerDownload = document.getElementById("sharedViewerDownload");
 
     function resetSpecialStatesIfNeeded(modalId) {
       if (modalId === "project-1-modal") {
         document.getElementById("project-1-flip")?.classList.remove("is-flipped");
+
+        if (sharedViewerTitle) sharedViewerTitle.textContent = "🛰️ Scientific Poster";
+        if (sharedViewerImg) {
+          sharedViewerImg.src = "science_poster.png";
+          sharedViewerImg.alt = "Scientific poster";
+        }
+        if (sharedViewerDownload) {
+          sharedViewerDownload.href = "science_poster.png";
+        }
       }
       if (modalId === "poster-viewer-modal") {
         viewerImg?.classList.remove("zoomed");
@@ -1271,6 +1272,30 @@
         if (!flipEl) return;
         if (to === "back") flipEl.classList.add("is-flipped");
         else flipEl.classList.remove("is-flipped");
+      });
+    });
+
+    // Shared viewer buttons (Rainfall + Tableau)
+    document.querySelectorAll("[data-open-shared-viewer]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+
+        const title = btn.getAttribute("data-view-title") || "Project Preview";
+        const src = btn.getAttribute("data-view-src") || "";
+        const downloadSrc = btn.getAttribute("data-view-download") || src;
+
+        if (sharedViewerTitle) sharedViewerTitle.textContent = title;
+
+        if (sharedViewerImg) {
+          sharedViewerImg.src = src;
+          sharedViewerImg.alt = title;
+        }
+
+        if (sharedViewerDownload) {
+          sharedViewerDownload.href = downloadSrc;
+        }
+
+        document.getElementById("project-1-flip")?.classList.add("is-flipped");
       });
     });
 
@@ -1351,7 +1376,6 @@
   setBranchLine(node, panel, line);
 }
 
-
       });
     }
 
@@ -1397,12 +1421,12 @@
       });
     }
 
-    document.querySelectorAll("[data-open-poster-viewer]").forEach((img) => {
-      img.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const src = img.getAttribute("src");
-        if (src) openPosterViewer(src);
-      });
+    document.addEventListener("click", (e) => {
+      const img = e.target.closest("[data-open-poster-viewer]");
+      if (!img) return;
+      e.stopPropagation();
+      const src = img.getAttribute("src");
+      if (src) openPosterViewer(src);
     });
 
     const viewerModal = document.getElementById("poster-viewer-modal");
